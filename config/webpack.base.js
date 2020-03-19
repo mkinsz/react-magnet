@@ -25,27 +25,18 @@ module.exports = {
 				exclude: /node_modules/,
 				loader: 'babel-loader'
 			},
-			{
-				test: /\.(png|jpg|gif)$/,
-				use: [
-					{
-						loader: 'url-loader',
-						options: {
-							limit: 8192,
-							name: 'images/[name].[ext]'
-						}
-					}
-				]
-			},
-			{
-				test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-				use: [
-					{
-						loader: 'url-loader',
-						options: fontsOptions
-					}
-				]
-			},
+			// {
+			// 	test: /\.(png|jpg|gif)$/,
+			// 	use: [
+			// 		{
+			// 			loader: 'url-loader',
+			// 			options: {
+			// 				limit: 8192,
+			// 				name: 'images/[name].[ext]'
+			// 			}
+			// 		}
+			// 	]
+			// },
 			{
 				test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
 				use: [

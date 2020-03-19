@@ -80,6 +80,7 @@ const Magnet = props => {
 
   const handleMouseDown = evt => {
     props.onChosed({ win: this, dom: ref.current, op: cursor }, evt);
+    console.log(stdRect(evt.target))
   };
 
   const handleMouseUp = evt => {};

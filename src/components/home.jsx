@@ -1,6 +1,6 @@
 import React from 'react';
 import { Magnets, Magnet } from './magnet';
-import Boxs  from './box';
+import { Box, Boxs }  from './box';
 
 const Home = props => {
     const [magneted, setMagneted] = React.useState(true)
@@ -37,10 +37,41 @@ const Home = props => {
         setMagneted('box-m' == e.target.id)
     }
 
+    const data = [
+        [0, 0, 200, 200],
+        [200, 0, 200, 200],
+        [0, 200, 200, 200],
+        [200, 200, 200, 200],
+    ];
+
+    const boxes = data.map(i => {
+        const color =
+            '#' +
+            [1, 2, 3]
+                .map(() =>
+                    ('0' + parseInt(100 + Math.random() * 155).toString(16)).slice(-2)
+                )
+                .join('');
+        const opacity = 0.25 + Math.random() * 0.75;
+        return (
+            <Box
+                key={i}
+                x={i[0]}
+                y={i[1]}
+                w={i[2]}
+                h={i[3]}
+                color={color}
+                opacity={opacity}
+                moveable={false}
+            ></Box>
+        );
+    });
+
+
     return (
         <>
-            <button id='box-m' onClick={handleClick}>Magnet</button>
-            <button id='box-b' onClick={handleClick}>Box</button>
+            {/* <button id='box-m' onClick={handleClick}>Magnet</button>
+            <button id='box-b' onClick={handleClick}>Box</button> */}
 
             <div className='box-contain'
                 style={{
@@ -54,11 +85,14 @@ const Home = props => {
                 }}
             >
                 {
-                    magneted ? <Magnets width={800} height={500} grid>
-                        {children}
-                    </Magnets> : <Boxs />
+                    // magneted ? <Magnets width={800} height={500} grid>
+                    //     {children}
+                    // </Magnets> : 
+                    <Boxs>
+                        {boxes}
+                        <Box x={500} y={500} w={100} h={100} color={'steelblue'}></Box>
+                    </Boxs>
                 }
-
             </div>
         </>
     );
