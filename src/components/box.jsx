@@ -30,7 +30,7 @@ const ALIGN_INNER = [ALIGN.tt, ALIGN.rr, ALIGN.bb, ALIGN.ll]
 // const ALIGN_CENTER = [ALIGN.xx, ALIGN.yy]
 
 const MARGIN = 10
-const NEAR = 1
+const NEAR = 6
 
 const toPx = p => `${p}px`;
 
@@ -64,8 +64,6 @@ export const Box = props => {
             offsetHeight: oh
         } = e.target;
 
-        // console.log(e.target.getBoundingClientRect())
-        // console.log(x, y, ol, ot, ow, oh, e.clientX, e.clientY)
         if (x < MARGIN && y > MARGIN && y < oh - MARGIN)
             setCursor(RESIZE.l);
         else if (x > ow - MARGIN && y > MARGIN && y < oh - MARGIN)
@@ -131,20 +129,17 @@ const diffRect = (refA, refB, { aligns = values(ALIGN) }) => {
     const rectB = stdRect(refB)
     const source = { rect: rectA }
     const target = { rect: rectB }
+    const absDis = true
+    const calc = (absDis ?Math.abs : ((n)=>n));
     const results = maps(reduces(ALIGN, (results, prop) => {
         return aligns.includes(prop) ? { ...results, [prop]: NaN } : results;
     }, {}), (_, prop) => {
+        
         switch (prop) {
-            case ALIGN.tt: return Math.abs(rectA.top - rectB.top)
-            case ALIGN.bb: return Math.abs(rectB.bottom - rectA.bottom)
-            case ALIGN.rr: return Math.abs(rectB.right - rectA.right);
-            case ALIGN.ll: return Math.abs(rectA.left - rectB.left);
-            // case ALIGN.tb: return Math.abs(rectA.top - rectB.bottom);
-            // case ALIGN.bt: return Math.abs(rectB.top - rectA.bottom);
-            // case ALIGN.rl: return Math.abs(rectB.left - rectA.right);
-            // case ALIGN.lr: return Math.abs(rectA.left - rectB.right);
-            // case ALIGN.xx: return Math.abs(((rectA.right - rectB.right) + (rectA.left - rectB.left)) / 2);
-            // case ALIGN.yy: return Math.abs(((rectA.top - rectB.top) + (rectA.bottom - rectB.bottom)) / 2);
+            case ALIGN.tt: return calc(rectA.top - rectB.top)
+            case ALIGN.bb: return calc(rectB.bottom - rectA.bottom)
+            case ALIGN.rr: return calc(rectB.right - rectA.right);
+            case ALIGN.ll: return calc(rectA.left - rectB.left);
         }
     })
 
@@ -163,13 +158,38 @@ export const Boxs = props => {
     const [pressed, setPressed] = React.useState(false)
     const [target, setTarget] = React.useState()
     const [rect, setRect] = React.useState(null)
+    const [pos, setPos] = React.useState()
     const ref = React.createRef();
+
+    React.useEffect(() => {
+        if(!target) return
+        target.style.zIndex = 100;
+        const l = tonum(target.style.left);
+        const t = tonum(target.style.top);
+        const w = tonum(target.style.width);
+        const h = tonum(target.style.height);
+
+        setRect({left: l, top: t, width: w, height: h, right: l + w, bottom: t + h})
+    }, [target])
 
     const handleMouseDown = e => {
         e.preventDefault();
         e.stopPropagation();
-        setTarget(e.target.className == 'box' && e.target)
+        
         setPressed(true)
+        setPos({x: e.clientX,y: e.clientY})
+        setTarget(e.target.className == 'box' && e.target)
+    };
+
+    const handleMouseUp = e => {
+        e.preventDefault();
+        e.stopPropagation();
+        target && (target.style.zIndex = 0)
+
+        setPos()
+        setRect()
+        setTarget()
+        setPressed(false)
     };
 
     const handleMouseMove = e => {
@@ -177,58 +197,49 @@ export const Boxs = props => {
         e.preventDefault();
         e.stopPropagation();
 
-        target.style.zIndex = 100;
+        const diffX = e.clientX - pos.x
+        const diffY = e.clientY - pos.y
 
-        const l = tonum(target.style.left);
-        const t = tonum(target.style.top);
-        const w = tonum(target.style.width);
-        const h = tonum(target.style.height);
-        const op = target.style.cursor
+        const newRect = { ...rect }
 
-        const newRect = { left: l, top: t, width: w, height: h, right: l + w, bottom: t + h }
-
-        switch (op) {
+        switch (target.style.cursor) {
             case RESIZE.l:
             case RESIZE.bl:
             case RESIZE.tl:
-                newRect.left += e.movementX;
-                newRect.width -= e.movementX;
+                newRect.left += diffX;
+                newRect.width -= diffX;
                 break;
 
             case RESIZE.r:
             case RESIZE.br:
             case RESIZE.tr:
-                newRect.width += e.movementX;
+                newRect.width += diffX;
                 break;
             case RESIZE.m:
-                newRect.left += e.movementX;
+                newRect.left += diffX;
                 break;
         }
 
-        switch (op) {
+        switch (target.style.cursor) {
             case RESIZE.t:
             case RESIZE.tl:
             case RESIZE.tr:
-                newRect.top += e.movementY;
-                newRect.height -= e.movementY;
+                newRect.top += diffY;
+                newRect.height -= diffY;
                 break;
 
             case RESIZE.b:
             case RESIZE.bl:
             case RESIZE.br:
-                newRect.height += e.movementY
+                newRect.height += diffY
                 break;
             case RESIZE.m:
-                newRect.top += e.movementY;
+                newRect.top += diffY;
                 break;
         }
         newRect.right = newRect.left + newRect.width;
         newRect.bottom = newRect.top + newRect.height;
 
-        // target.style.left = toPx(newRect.left)
-        // target.style.top = toPx(newRect.top)
-        // target.style.width = toPx(newRect.width)
-        // target.style.height = toPx(newRect.height)
         handle(newRect)
     };
 
@@ -238,28 +249,19 @@ export const Boxs = props => {
         const newPosition = { x: left, y: top };
         const { x: attractedX, y: attractedY } = targets.reduce(({ x, y }, diff) => {
             const { target, results, ranking } = diff;
+
             return ranking.reduce(({ x, y }, prop) => {
                 let value = results[prop];
                 if (value <= NEAR) {
                     switch (prop) {
                         case ALIGN.rr:
                         case ALIGN.ll:
-                        // case ALIGN.rl:
-                        // case ALIGN.lr:
-                        // case ALIGN.xx:
-                            if (!x || value < x.value) {
-                                x = { prop, value, target };
-                            }
+                            if (!x || value < x.value) x = { prop, value, target };
                             break;
 
                         case ALIGN.tt:
                         case ALIGN.bb:
-                        // case ALIGN.tb:
-                        // case ALIGN.bt:
-                        // case ALIGN.yy:
-                            if (!y || value < y.value) {
-                                y = { prop, value, target };
-                            }
+                            if (!y || value < y.value) y = { prop, value, target };
                             break;
                     }
                 }
@@ -267,14 +269,13 @@ export const Boxs = props => {
             }, { x, y });
         }, { x: null, y: null })
 
+        console.log(attractedX, attractedY)
+
         if (attractedX) {
             const { prop, target: { rect } } = attractedX;
             switch (prop) {
                 case ALIGN.rr: newPosition.x = (rect.right - width); break;
                 case ALIGN.ll: newPosition.x = rect.left; break;
-                case ALIGN.rl: newPosition.x = (rect.left - width); break;
-                case ALIGN.lr: newPosition.x = rect.right; break;
-                case ALIGN.xx: newPosition.x = ((rect.left + rect.right - width) / 2); break;
             }
         }
         if (attractedY) {
@@ -282,9 +283,6 @@ export const Boxs = props => {
             switch (prop) {
                 case ALIGN.tt: newPosition.y = rect.top; break;
                 case ALIGN.bb: newPosition.y = (rect.bottom - height); break;
-                case ALIGN.tb: newPosition.y = rect.bottom; break;
-                case ALIGN.bt: newPosition.y = (rect.top - height); break;
-                case ALIGN.yy: newPosition.y = ((rect.top + rect.bottom - height) / 2); break;
             }
         }
 
@@ -321,14 +319,6 @@ export const Boxs = props => {
             targets, results, ranking, mins: maps(ranking, arr => arr[0]), maxs: maps(ranking, arr => arr[arr.length - 1])
         }
     }
-
-    const handleMouseUp = e => {
-        e.preventDefault();
-        e.stopPropagation();
-        target && (target.style.zIndex = 0)
-        setTarget(null)
-        setPressed(false)
-    };
 
     const style = {
         width: 800,
