@@ -93,7 +93,7 @@ export const Box = props => {
     const style = {
         left: props.x, top: props.y, width: props.w, height: props.h, cursor: cursor,
         position: 'absolute', background: props.color, opacity: props.opacity ? props.opacity : 1,
-        zIndex: 0
+        zIndex: 0, border: '1px solid gray', boxSizing: 'border-box'
     };
 
     return <div ref={ref} className={moveable ? 'box' : 'cell'}
@@ -130,11 +130,11 @@ const diffRect = (refA, refB, { aligns = values(ALIGN) }) => {
     const source = { rect: rectA }
     const target = { rect: rectB }
     const absDis = true
-    const calc = (absDis ?Math.abs : ((n)=>n));
+    const calc = (absDis ? Math.abs : ((n) => n));
     const results = maps(reduces(ALIGN, (results, prop) => {
         return aligns.includes(prop) ? { ...results, [prop]: NaN } : results;
     }, {}), (_, prop) => {
-        
+
         switch (prop) {
             case ALIGN.tt: return calc(rectA.top - rectB.top)
             case ALIGN.bb: return calc(rectB.bottom - rectA.bottom)
@@ -156,44 +156,44 @@ const diffRect = (refA, refB, { aligns = values(ALIGN) }) => {
 
 export const Boxs = props => {
     const [pressed, setPressed] = React.useState(false)
-    const [target, setTarget] = React.useState()
+    const [current, setCurrent] = React.useState()
     const [rect, setRect] = React.useState(null)
     const [pos, setPos] = React.useState()
     const ref = React.createRef();
 
     React.useEffect(() => {
-        if(!target) return
-        target.style.zIndex = 100;
-        const l = tonum(target.style.left);
-        const t = tonum(target.style.top);
-        const w = tonum(target.style.width);
-        const h = tonum(target.style.height);
+        if (!current) return
+        current.style.zIndex = 100;
+        const l = tonum(current.style.left);
+        const t = tonum(current.style.top);
+        const w = tonum(current.style.width);
+        const h = tonum(current.style.height);
 
-        setRect({left: l, top: t, width: w, height: h, right: l + w, bottom: t + h})
-    }, [target])
+        setRect({ left: l, top: t, width: w, height: h, right: l + w, bottom: t + h })
+    }, [current])
 
     const handleMouseDown = e => {
         e.preventDefault();
         e.stopPropagation();
-        
+
         setPressed(true)
-        setPos({x: e.clientX,y: e.clientY})
-        setTarget(e.target.className == 'box' && e.target)
+        setPos({ x: e.clientX, y: e.clientY })
+        setCurrent(e.target.className == 'box' && e.target)
     };
 
     const handleMouseUp = e => {
         e.preventDefault();
         e.stopPropagation();
-        target && (target.style.zIndex = 0)
+        current && (current.style.zIndex = 0)
 
         setPos()
         setRect()
-        setTarget()
+        setCurrent()
         setPressed(false)
     };
 
     const handleMouseMove = e => {
-        if (!pressed || !target) return true;
+        if (!pressed || !current) return true;
         e.preventDefault();
         e.stopPropagation();
 
@@ -202,7 +202,7 @@ export const Boxs = props => {
 
         const newRect = { ...rect }
 
-        switch (target.style.cursor) {
+        switch (current.style.cursor) {
             case RESIZE.l:
             case RESIZE.bl:
             case RESIZE.tl:
@@ -220,7 +220,7 @@ export const Boxs = props => {
                 break;
         }
 
-        switch (target.style.cursor) {
+        switch (current.style.cursor) {
             case RESIZE.t:
             case RESIZE.tl:
             case RESIZE.tr:
@@ -245,66 +245,131 @@ export const Boxs = props => {
 
     const handle = rect => {
         const { targets, results } = check(rect)
-        const { top, left, width, height } = rect
-        const newPosition = { x: left, y: top };
-        const { x: attractedX, y: attractedY } = targets.reduce(({ x, y }, diff) => {
-            const { target, results, ranking } = diff;
+        const { top, left, right, bottom, width, height } = rect
+        let targetRect = {}
+        if (-1 == current.style.cursor.search('resize')) {
+            const newPosition = { x: left, y: top };
+            const { x: attractedX, y: attractedY } = targets.reduce(({ x, y }, diff) => {
+                const { target, results, ranking } = diff;
 
-            return ranking.reduce(({ x, y }, prop) => {
-                let value = results[prop];
-                if (value <= NEAR) {
-                    switch (prop) {
-                        case ALIGN.rr:
-                        case ALIGN.ll:
-                            if (!x || value < x.value) x = { prop, value, target };
-                            break;
+                return ranking.reduce(({ x, y }, prop) => {
+                    let value = results[prop];
+                    if (value <= NEAR) {
+                        switch (prop) {
+                            case ALIGN.rr:
+                            case ALIGN.ll:
+                                if (!x || value < x.value) x = { prop, value, target };
+                                break;
 
-                        case ALIGN.tt:
-                        case ALIGN.bb:
-                            if (!y || value < y.value) y = { prop, value, target };
-                            break;
+                            case ALIGN.tt:
+                            case ALIGN.bb:
+                                if (!y || value < y.value) y = { prop, value, target };
+                                break;
+                        }
                     }
+                    return { x, y };
+                }, { x, y });
+            }, { x: null, y: null })
+
+            if (attractedX) {
+                const { prop, target: { rect } } = attractedX;
+                switch (prop) {
+                    case ALIGN.rr: newPosition.x = (rect.right - width); break;
+                    case ALIGN.ll: newPosition.x = rect.left; break;
                 }
-                return { x, y };
-            }, { x, y });
-        }, { x: null, y: null })
-
-        console.log(attractedX, attractedY)
-
-        if (attractedX) {
-            const { prop, target: { rect } } = attractedX;
-            switch (prop) {
-                case ALIGN.rr: newPosition.x = (rect.right - width); break;
-                case ALIGN.ll: newPosition.x = rect.left; break;
             }
-        }
-        if (attractedY) {
-            const { prop, target: { rect } } = attractedY;
-            switch (prop) {
-                case ALIGN.tt: newPosition.y = rect.top; break;
-                case ALIGN.bb: newPosition.y = (rect.bottom - height); break;
+            if (attractedY) {
+                const { prop, target: { rect } } = attractedY;
+                switch (prop) {
+                    case ALIGN.tt: newPosition.y = rect.top; break;
+                    case ALIGN.bb: newPosition.y = (rect.bottom - height); break;
+                }
             }
+
+            targetRect = ((x, y) => ({
+                top: y,
+                right: (x + width),
+                bottom: (y + height),
+                left: x,
+                width,
+                height,
+            }))((newPosition.x), (newPosition.y));
+
+        } else {
+            const newRect = { ...rect };
+            const { l: attractedL, t: attractedT, r: attractedR, b: attractedB } = targets.reduce(({ l, t, r, b }, diff) => {
+                const { target, results, ranking } = diff;
+                return ranking.reduce(({ l, t, r, b }, prop) => {
+                    let value = results[prop];
+                    if (value <= NEAR) {
+                        switch (prop) {
+                            case ALIGN.rr:
+                                if (!r || value < r.value) r = { prop, value, target };
+                                break;
+                            case ALIGN.ll:
+                                if (!l || value < l.value) l = { prop, value, target };
+                                break;
+
+                            case ALIGN.tt:
+                                if (!t || value < t.value) t = { prop, value, target };
+                                break;
+
+                            case ALIGN.bb:
+                                if (!b || value < b.value) b = { prop, value, target };
+                                break;
+                        }
+                    }
+                    return { l, t, r, b };
+                }, { l, t, r, b });
+            }, { l: null, t: null, r: null, b: null })
+
+            if (attractedL) {
+                const { prop, target: { rect } } = attractedL;
+                switch (prop) {
+                    case ALIGN.ll: newRect.left = rect.left; break;
+                }
+            }
+            if (attractedR) {
+                const { prop, target: { rect } } = attractedR;
+                switch (prop) {
+                    case ALIGN.rr: newRect.right = rect.right; break;
+                }
+            }
+            if (attractedT) {
+                const { prop, target: { rect } } = attractedT;
+                switch (prop) {
+                    case ALIGN.tt: newRect.top = rect.top; break;
+                }
+            }
+            if (attractedB) {
+                const { prop, target: { rect } } = attractedB;
+                switch (prop) {
+                    case ALIGN.bb: newRect.bottom = rect.bottom; break;
+                }
+            }
+
+            targetRect = ((l, t, r, b) => ({
+                top: t,
+                right: r,
+                bottom: b,
+                left: l,
+                width: r - l,
+                height: b - t,
+            }))(newRect.left, newRect.top, newRect.right, newRect.bottom);
         }
 
-        let targetRect = ((x, y) => ({
-            top: y,
-            right: (x + width),
-            bottom: (y + height),
-            left: x,
-            width,
-            height,
-        }))((newPosition.x), (newPosition.y));
-
-        target.style.top = toPx(targetRect.top);
-        target.style.left = toPx(targetRect.left);
-        target.style.width = toPx(targetRect.width);
-        target.style.height = toPx(targetRect.height);
+        current.style.top = toPx(targetRect.top);
+        current.style.left = toPx(targetRect.left);
+        current.style.width = toPx(targetRect.width);
+        current.style.height = toPx(targetRect.height);
+        current.style.bottom = 'auto'
+        current.style.right = 'auto'
     }
 
     const check = rect => {
         const aligns = [].concat(ALIGN_INNER)
         const targets = Array.from(ref.current.children).
-            filter(m => m != target).
+            filter(m => m != current).
             map(m => diffRect(rect, m, { aligns }));
         const results = targets.reduce((results, diff) => {
             eachs(diff.results, (_, prop) => {
