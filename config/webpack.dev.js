@@ -25,7 +25,7 @@ module.exports = merge(common, {
 		// assets 中资源文件默认应该还使用 assets
 		contentBase: path.resolve(__dirname, '../public'),
 		host: 'localhost',
-		port: 8080,
+		port: 8888,
 		hot: true,
 		open: false,
 		https: false,

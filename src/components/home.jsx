@@ -1,6 +1,7 @@
 import React from 'react';
 import { Magnets, Magnet } from './magnet';
 import { Box, Boxs }  from './box';
+import { Scene, View } from './scene';
 
 const Home = props => {
     const [magneted, setMagneted] = React.useState(true)
@@ -70,8 +71,8 @@ const Home = props => {
 
     return (
         <>
-            {/* <button id='box-m' onClick={handleClick}>Magnet</button>
-            <button id='box-b' onClick={handleClick}>Box</button> */}
+            <button id='box-m' onClick={handleClick}>Magnet</button>
+            <button id='box-b' onClick={handleClick}>Box</button>
 
             <div className='box-contain'
                 style={{
@@ -88,6 +89,9 @@ const Home = props => {
                     // magneted ? <Magnets width={800} height={500} grid>
                     //     {children}
                     // </Magnets> : 
+                    magneted? <Scene w={500} h={300}>
+                        <View x={200} y={200} w={100} h={100}></View>
+                    </Scene>:
                     <Boxs>
                         {boxes}
                         <Box x={500} y={500} w={100} h={100} color={'steelblue'}></Box>

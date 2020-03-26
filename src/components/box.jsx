@@ -380,6 +380,8 @@ export const Boxs = props => {
         }, {})
         const ranking = maps(results, (arr, prop) => arr.concat().sort((a, b) => (a.results[prop] - b.results[prop])))
 
+        console.log(maps(ranking, arr => arr[0]), maps(ranking, arr => arr[arr.length - 1]))
+
         return {
             targets, results, ranking, mins: maps(ranking, arr => arr[0]), maxs: maps(ranking, arr => arr[arr.length - 1])
         }
