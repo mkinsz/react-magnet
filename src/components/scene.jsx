@@ -12,17 +12,6 @@ const RESIZE = {
     bl: 'sw-resize'
 };
 
-const ALIGN = {
-    tt: 'topToTop',
-    rr: 'rightToRight',
-    bb: 'bottomToBottom',
-    ll: 'leftToLeft',
-};
-
-// const ALIGN_OUTER = [ALIGN.tb, ALIGN.rl, ALIGN.bt, ALIGN.lr]
-const ALIGN_INNER = [ALIGN.tt, ALIGN.rr, ALIGN.bb, ALIGN.ll]
-// const ALIGN_CENTER = [ALIGN.xx, ALIGN.yy]
-
 const MARGIN = 10
 const NEAR = 6
 
@@ -88,53 +77,6 @@ export const View = props => {
 }
 
 const tonum = (n) => parseInt(n);
-const keys = o => Object.keys(o)
-const reduces = (o, f = (() => { }), r) => keys(o).reduce((t, p) => f(t, o[p], p, o), r)
-const values = o => reduces(o, (a, v) => a.concat([v]), [])
-const maps = (o, f = (() => { }), t = this) => reduces(o, (r, v, p) => ({ ...r, [p]: f.call(t, v, p, o) }), {})
-const iselem = (e) => (isset(e) && (e instanceof Element || e instanceof Window || e instanceof Document));
-const eachs = (o, f = (() => { }), t = this) => keys(o).forEach(p => f.call(t, o[p], p, o))
-
-const stdRect = d => {
-    const rect = {}
-    rect.left = tonum(d.style.left)
-    rect.top = tonum(d.style.top)
-    rect.width = tonum(d.style.width)
-    rect.height = tonum(d.style.height)
-    rect.bottom = rect.top + rect.height
-    rect.right = rect.left + rect.width
-    return rect;
-}
-
-const diffRect = (refA, refB, { aligns = values(ALIGN) }) => {
-    const rectA = refA
-    const rectB = stdRect(refB)
-    const source = { rect: rectA }
-    const target = { rect: rectB }
-    const absDis = true
-    const calc = (absDis ? Math.abs : ((n) => n));
-    const results = maps(reduces(ALIGN, (results, prop) => {
-        return aligns.includes(prop) ? { ...results, [prop]: NaN } : results;
-    }, {}), (_, prop) => {
-
-        switch (prop) {
-            case ALIGN.tt: return calc(rectA.top - rectB.top)
-            case ALIGN.bb: return calc(rectB.bottom - rectA.bottom)
-            case ALIGN.rr: return calc(rectB.right - rectA.right);
-            case ALIGN.ll: return calc(rectA.left - rectB.left);
-        }
-    })
-
-    const ranking = keys(results).sort((a, b) => (results[a] - results[b]));
-    return {
-        source,
-        target,
-        results,
-        ranking,
-        min: ranking[0],
-        max: ranking[results.length - 1],
-    };
-}
 
 export const Scene = props => {
     const [pressed, setPressed] = React.useState(false)
@@ -142,16 +84,36 @@ export const Scene = props => {
     const [rect, setRect] = React.useState(null)
     const [pos, setPos] = React.useState()
     const cref = React.createRef();
+    const [xs, setXs] = React.useState([]);
+    const [ys, setYs] = React.useState([]);
 
     React.useEffect(() => {
-        // const canvas = cref.current;
-        // const parent = canvas.parentElement || canvas.parentNode || document.body
-        // canvas.style.width = toPx(parent.clientWidth)
-        // canvas.style.height = toPx(parent.clientHeight)
-        // canvas.width = parent.clientWidth;
-        // canvas.height = parent.clientHeight;
-        render();
+        const { data, radio } = props;
+        setXs([...new Set(data.map(m => m.startx*radio).concat(data.map(m => (m.startx+m.width)*radio)))])
+        setYs([...new Set(data.map(m => m.starty*radio).concat(data.map(m => (m.starty+m.hight)*radio)))])
     }, [])
+
+    React.useEffect(() => {
+        const canvas = cref.current;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'lightgray';
+    
+        const gw = canvas.width;
+        const gh = canvas.height;
+        xs.map(m => {
+            ctx.moveTo(m, 0);
+            ctx.lineTo(m, gh);
+            ctx.stroke();
+        })
+        ys.map(m => {
+            ctx.moveTo(0, m);
+            ctx.lineTo(gw, m);
+            ctx.stroke();
+        })
+        ctx.closePath()
+    }, [xs, ys])
 
     React.useEffect(() => {
         if (!current) return
@@ -191,7 +153,7 @@ export const Scene = props => {
         const diffX = e.clientX - pos.x
         const diffY = e.clientY - pos.y
 
-        const newRect = { ...rect }
+        let newRect = { ...rect }
 
         switch (current.style.cursor) {
             case RESIZE.l:
@@ -231,6 +193,11 @@ export const Scene = props => {
         newRect.right = newRect.left + newRect.width;
         newRect.bottom = newRect.top + newRect.height;
 
+        newRect = handle(newRect)
+
+        const {radio} = props;
+        console.log(newRect.top/radio, newRect.left/radio, newRect.width/radio, newRect.height/radio)
+
         current.style.top = toPx(newRect.top);
         current.style.left = toPx(newRect.left);
         current.style.width = toPx(newRect.width);
@@ -239,34 +206,61 @@ export const Scene = props => {
         current.style.right = 'auto'
     };
 
-    const render = () => {
-        const layout = 3;
-        const canvas = cref.current;
-        const ctx = canvas.getContext('2d');
-    
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // ctx.translate(0.5,0.5);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'lightgray';
-        // ctx.setLineDash([8, 4]);
-    
-        const gw = canvas.width;
-        const gh = canvas.height;
-
-        for(let i = 0.5; i < gw; i += 200) {
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, gh);
-            ctx.stroke();
+    const handle = rect => {
+        if (-1 == current.style.cursor.search('resize')) {
+            xs.some(m => {
+                if(Math.abs(m - rect.left) < NEAR) {
+                    rect.left=m;
+                    return true;
+                }
+                if(Math.abs(m - rect.right) < NEAR) {
+                    rect.left=m-rect.width;
+                    return true;
+                }
+            })
+            ys.some(m => {
+                if(Math.abs(m-rect.top) < NEAR) {
+                    rect.top = m
+                    return true;
+                }
+                if(Math.abs(m-rect.bottom) < NEAR) {
+                    rect.top = m-rect.height
+                    return true;
+                }
+            })
+            return rect;
+        }else {
+            xs.some(m => {
+                if(Math.abs(m - rect.left) < NEAR) {
+                    rect.left=m;
+                    rect.width=rect.right-m;
+                    return true;
+                }
+            })
+            xs.some(m => {
+                if(Math.abs(m - rect.right) < NEAR) {
+                    rect.right=m;
+                    rect.width=m-rect.left
+                    return true;
+                }
+            })            
+            ys.some(m => {
+                if(Math.abs(m-rect.top) < NEAR) {
+                    rect.top=m
+                    rect.height=rect.bottom-m
+                    return true;
+                }
+            })
+            ys.some(m => {
+                if(Math.abs(m-rect.bottom) < NEAR) {
+                    rect.bottom = m
+                    rect.height=m-rect.top
+                    return true;
+                }
+            })
         }
-
-        for(let j = 0.5; j < gh; j += 100) {
-            ctx.moveTo(0, j);
-            ctx.lineTo(gw, j);
-            ctx.stroke();
-        }
-
-        ctx.closePath()
-      };
+        return rect;
+    }
 
     const style = {
         width: props.w,
