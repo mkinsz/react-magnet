@@ -84,26 +84,25 @@ export const Scene = props => {
     const [current, setCurrent] = React.useState()
     const [rect, setRect] = React.useState(null)
     const [pos, setPos] = React.useState()
-    const cref = React.createRef();
     const [xs, setXs] = React.useState([]);
     const [ys, setYs] = React.useState([]);
-    const [data, setData] = React.useState({})
+    const cref = React.createRef();
 
     React.useEffect(() => {
         const { data, radio } = props;
-        setXs([...new Set(data.map(m => m.startx*radio).concat(data.map(m => (m.startx+m.width)*radio)))])
-        setYs([...new Set(data.map(m => m.starty*radio).concat(data.map(m => (m.starty+m.hight)*radio)))])
+        setXs([...new Set(data.map(m => m.startx * radio).concat(data.map(m => (m.startx + m.width) * radio)))])
+        setYs([...new Set(data.map(m => m.starty * radio).concat(data.map(m => (m.starty + m.hight) * radio)))])
     }, [])
 
     React.useEffect(() => {
         const canvas = cref.current;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'lightgray';
-    
         const gw = canvas.width;
         const gh = canvas.height;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, gw, gh);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'lightgray';
+
         xs.map(m => {
             ctx.moveTo(m, 0);
             ctx.lineTo(m, gh);
@@ -119,6 +118,7 @@ export const Scene = props => {
 
     React.useEffect(() => {
         if (!current) return
+
         current.style.zIndex = 100;
         const l = tonum(current.style.left);
         const t = tonum(current.style.top);
@@ -131,6 +131,7 @@ export const Scene = props => {
     const handleMouseDown = e => {
         e.preventDefault();
         e.stopPropagation();
+
         setPressed(true)
         setPos({ x: e.clientX, y: e.clientY })
         setCurrent(e.target.className == 'box' && e.target)
@@ -139,12 +140,12 @@ export const Scene = props => {
     const handleMouseUp = e => {
         e.preventDefault();
         e.stopPropagation();
-        current && (current.style.zIndex = 0)
 
         setPos()
         setRect()
         setCurrent()
         setPressed(false)
+        current && (current.style.zIndex = 0)
     };
 
     const handleMouseMove = e => {
@@ -164,7 +165,6 @@ export const Scene = props => {
                 newRect.left += diffX;
                 newRect.width -= diffX;
                 break;
-
             case RESIZE.r:
             case RESIZE.br:
             case RESIZE.tr:
@@ -182,7 +182,6 @@ export const Scene = props => {
                 newRect.top += diffY;
                 newRect.height -= diffY;
                 break;
-
             case RESIZE.b:
             case RESIZE.bl:
             case RESIZE.br:
@@ -200,63 +199,18 @@ export const Scene = props => {
 
     const handle = rect => {
         if (-1 == current.style.cursor.search('resize')) {
-            xs.some(m => {
-                if(Math.abs(m - rect.left) < NEAR) {
-                    rect.left=m;
-                    return true;
-                }
-            })
-            xs.some(m => {
-                if(Math.abs(m - rect.right) < NEAR) {
-                    rect.left=m-rect.width;
-                    return true;
-                }
-            })
-            ys.some(m => {
-                if(Math.abs(m-rect.top) < NEAR) {
-                    rect.top = m
-                    return true;
-                }
-            })
-            ys.some(m => {
-                if(Math.abs(m-rect.bottom) < NEAR) {
-                    rect.top = m-rect.height
-                    return true;
-                }
-            })
-
-        }else {
-            xs.some(m => {
-                if(Math.abs(m - rect.left) < NEAR) {
-                    rect.left=m;
-                    rect.width=rect.right-m;
-                    return true;
-                }
-            })
-            xs.some(m => {
-                if(Math.abs(m - rect.right) < NEAR) {
-                    rect.right=m;
-                    rect.width=m-rect.left
-                    return true;
-                }
-            })            
-            ys.some(m => {
-                if(Math.abs(m-rect.top) < NEAR) {
-                    rect.top=m
-                    rect.height=rect.bottom-m
-                    return true;
-                }
-            })
-            ys.some(m => {
-                if(Math.abs(m-rect.bottom) < NEAR) {
-                    rect.bottom = m
-                    rect.height=m-rect.top
-                    return true;
-                }
-            })
+            xs.some(m => (Math.abs(m - rect.left) < NEAR) && (rect.left = m))
+            xs.some(m => (Math.abs(m - rect.right) < NEAR) && (rect.left = m - rect.width))
+            ys.some(m => (Math.abs(m - rect.top) < NEAR) && (rect.top = m))
+            ys.some(m => (Math.abs(m - rect.bottom) < NEAR) && (rect.top = m - rect.height))
+        } else {
+            xs.some(m => (Math.abs(m - rect.left) < NEAR) && (rect.left = m, rect.width = rect.right - m))
+            xs.some(m => (Math.abs(m - rect.right) < NEAR) && (rect.right = m, rect.width = m - rect.left))
+            ys.some(m => (Math.abs(m - rect.top) < NEAR) && (rect.top = m, rect.height = rect.bottom - m))
+            ys.some(m => (Math.abs(m - rect.bottom) < NEAR) && (rect.bottom = m, rect.height = m - rect.top))
         }
 
-        console.log(rect.left/props.radio, rect.top/props.radio, rect.width/props.radio, rect.height/props.radio)
+        console.log(rect.left / props.radio, rect.top / props.radio, rect.width / props.radio, rect.height / props.radio)
 
         current.style.top = toPx(rect.top);
         current.style.left = toPx(rect.left);
