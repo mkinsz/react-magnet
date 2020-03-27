@@ -80,15 +80,7 @@ const Home = props => {
         cellnum: 4
     }
 
-    const _cells = [
-        {
-            "id": 3,
-            "chnid": 0,
-            "startx": 0,
-            "starty": 1080,
-            "width": 1920,
-            "hight": 1080
-        },
+    const cells = [
         {
             "id": 1,
             "chnid": 0,
@@ -96,25 +88,107 @@ const Home = props => {
             "starty": 0,
             "width": 1920,
             "hight": 1080
-        },
-        {
+          },{
             "id": 2,
             "chnid": 0,
             "startx": 1920,
             "starty": 0,
             "width": 1920,
             "hight": 1080
-        },
-        {
+          },{
+            "id": 3,
+            "chnid": 0,
+            "startx": 3840,
+            "starty": 0,
+            "width": 1920,
+            "hight": 1080
+          },{
             "id": 4,
+            "chnid": 0,
+            "startx": 5760,
+            "starty": 0,
+            "width": 1920,
+            "hight": 1080
+          },{
+            "id": 5,
+            "chnid": 0,
+            "startx": 7680,
+            "starty": 0,
+            "width": 1920,
+            "hight": 1080
+          },{
+            "id": 6,
+            "chnid": 0,
+            "startx": 0,
+            "starty": 1080,
+            "width": 1920,
+            "hight": 1080
+          },{
+            "id": 7,
             "chnid": 0,
             "startx": 1920,
             "starty": 1080,
             "width": 1920,
             "hight": 1080
-        }]
+          },{
+            "id": 8,
+            "chnid": 0,
+            "startx": 3840,
+            "starty": 1080,
+            "width": 1920,
+            "hight": 1080
+          },{
+            "id": 9,
+            "chnid": 0,
+            "startx": 5760,
+            "starty": 1080,
+            "width": 1920,
+            "hight": 1080
+          },{
+            "id": 10,
+            "chnid": 0,
+            "startx": 7680,
+            "starty": 1080,
+            "width": 1920,
+            "hight": 1080
+          },{
+            "id": 11,
+            "chnid": 0,
+            "startx": 0,
+            "starty": 2160,
+            "width": 1920,
+            "hight": 1080
+          },{
+            "id": 12,
+            "chnid": 0,
+            "startx": 1920,
+            "starty": 2160,
+            "width": 1920,
+            "hight": 1080
+          },{
+            "id": 13,
+            "chnid": 0,
+            "startx": 3840,
+            "starty": 2160,
+            "width": 1920,
+            "hight": 1080
+          },{
+            "id": 14,
+            "chnid": 0,
+            "startx": 5760,
+            "starty": 2160,
+            "width": 1920,
+            "hight": 1080
+          },{
+            "id": 15,
+            "chnid": 0,
+            "startx": 7680,
+            "starty": 2160,
+            "width": 1920,
+            "hight": 1080
+          }]
 
-    const cells = [
+    const _cells = [
         {
             "id": 1,
             "chnid": 0,
@@ -181,17 +255,19 @@ const Home = props => {
         }
     ]
 
-    const br = cells.reduce(({ w = 0, h = 0 }, m) => {
+    const {x: w, y: h} = cells.reduce(({ x = 0, y = 0 }, m) => {
         const r = m.startx + m.width
         const b = m.starty + m.hight
-        return { w: w < r ? r : w, h: h < b ? b : h }
+        return { x: x < r ? r : x, y: y < b ? b : y }
     })
 
-    const w = 600; const h = 300;
-    const radio = (w * br.h > h * br.w) ? h / br.h : w / br.w
+    const strip = (n, p = 12) => parseFloat(n.toPrecision(p))
 
-    const width = br.w * radio;
-    const height = br.h * radio;
+    const x = 600; const y = 300;
+    const radio = (x * h > y * w) ? strip(y / h) : strip(x / w)
+
+    const width = w * radio;
+    const height = h * radio;
 
     return (
         <>

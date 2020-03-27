@@ -17,6 +17,7 @@ const NEAR = 6
 
 const toPx = p => `${p}px`;
 const isset = (o) => ('undefined' !== typeof o);
+const strip = (n, p = 12) => parseFloat(n.toPrecision(p))
 
 export const View = props => {
     const [cursor, setCursor] = useState(RESIZE.m);
@@ -76,7 +77,7 @@ export const View = props => {
     </div>
 }
 
-const tonum = (n) => parseInt(n);
+const tonum = (n) => parseFloat(n);
 
 export const Scene = props => {
     const [pressed, setPressed] = React.useState(false)
@@ -86,6 +87,7 @@ export const Scene = props => {
     const cref = React.createRef();
     const [xs, setXs] = React.useState([]);
     const [ys, setYs] = React.useState([]);
+    const [data, setData] = React.useState({})
 
     React.useEffect(() => {
         const { data, radio } = props;
@@ -193,17 +195,7 @@ export const Scene = props => {
         newRect.right = newRect.left + newRect.width;
         newRect.bottom = newRect.top + newRect.height;
 
-        newRect = handle(newRect)
-
-        const {radio} = props;
-        console.log(newRect.top/radio, newRect.left/radio, newRect.width/radio, newRect.height/radio)
-
-        current.style.top = toPx(newRect.top);
-        current.style.left = toPx(newRect.left);
-        current.style.width = toPx(newRect.width);
-        current.style.height = toPx(newRect.height);
-        current.style.bottom = 'auto'
-        current.style.right = 'auto'
+        handle(newRect)
     };
 
     const handle = rect => {
@@ -213,6 +205,8 @@ export const Scene = props => {
                     rect.left=m;
                     return true;
                 }
+            })
+            xs.some(m => {
                 if(Math.abs(m - rect.right) < NEAR) {
                     rect.left=m-rect.width;
                     return true;
@@ -223,12 +217,14 @@ export const Scene = props => {
                     rect.top = m
                     return true;
                 }
+            })
+            ys.some(m => {
                 if(Math.abs(m-rect.bottom) < NEAR) {
                     rect.top = m-rect.height
                     return true;
                 }
             })
-            return rect;
+
         }else {
             xs.some(m => {
                 if(Math.abs(m - rect.left) < NEAR) {
@@ -259,7 +255,15 @@ export const Scene = props => {
                 }
             })
         }
-        return rect;
+
+        console.log(rect.left/props.radio, rect.top/props.radio, rect.width/props.radio, rect.height/props.radio)
+
+        current.style.top = toPx(rect.top);
+        current.style.left = toPx(rect.left);
+        current.style.width = toPx(rect.width);
+        current.style.height = toPx(rect.height);
+        current.style.bottom = 'auto'
+        current.style.right = 'auto'
     }
 
     const style = {
@@ -271,8 +275,9 @@ export const Scene = props => {
         boxShadow: '4px 4px 8px rgba(0,0,0,0.5)'
     };
 
+
     return (
-        <div style={style} 
+        <div style={style}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}>
