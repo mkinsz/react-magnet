@@ -167,7 +167,6 @@ export const Scene = props => {
     const handleMouseDown = e => {
         e.preventDefault();
         e.stopPropagation();
-
         setPressed(true)
         setPos({ x: e.clientX, y: e.clientY })
         setCurrent(e.target.className == 'box' && e.target)
@@ -246,24 +245,27 @@ export const Scene = props => {
         const ctx = canvas.getContext('2d');
     
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.translate(0.5,0.5);
+        // ctx.translate(0.5,0.5);
         ctx.lineWidth = 1;
         ctx.strokeStyle = 'lightgray';
-        ctx.setLineDash([8, 4]);
+        // ctx.setLineDash([8, 4]);
     
-        for (let i = 1; i < layout; i++) {
-          const gwidth = canvas.width;
-          const gheight = canvas.height;
-          const width = (i / layout) * gwidth;
-          const height = (i / layout) * gheight;
-          console.log(width, height)
-    
-          ctx.moveTo(width, 0);
-          ctx.lineTo(width, gheight);
-          ctx.moveTo(0, height);
-          ctx.lineTo(gwidth, height);
+        const gw = canvas.width;
+        const gh = canvas.height;
+
+        for(let i = 0.5; i < gw; i += 200) {
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, gh);
+            ctx.stroke();
         }
-        ctx.stroke();
+
+        for(let j = 0.5; j < gh; j += 100) {
+            ctx.moveTo(0, j);
+            ctx.lineTo(gw, j);
+            ctx.stroke();
+        }
+
+        ctx.closePath()
       };
 
     const style = {
@@ -272,6 +274,7 @@ export const Scene = props => {
         background: '#F5F8FA',
         border: '1px solid lightgray',
         position: 'relative',
+        boxShadow: '4px 4px 8px rgba(0,0,0,0.5)'
     };
 
     return (

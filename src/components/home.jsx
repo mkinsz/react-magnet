@@ -89,7 +89,7 @@ const Home = props => {
                     // magneted ? <Magnets width={800} height={500} grid>
                     //     {children}
                     // </Magnets> : 
-                    magneted? <Scene w={500} h={300}>
+                    magneted? <Scene w={600} h={300}>
                         <View x={200} y={200} w={100} h={100}></View>
                     </Scene>:
                     <Boxs>
